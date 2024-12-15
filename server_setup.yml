@@ -1,0 +1,57 @@
+---
+- name: Complete Ubuntu Server Setup
+  hosts: servers
+  become: yes
+  vars:
+    ssh_public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+  tasks:
+
+    # 1. Update and upgrade the system
+    - name: Update and upgrade the system
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    # 2. Enable and configure UFW firewall
+    - name: Allow OpenSSH through UFW
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    # 3. Install Fail2Ban
+    - name: Install Fail2Ban
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Ensure Fail2Ban is running and enabled
+      service:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    # 4. Install essential utilities
+    - name: Install essential utilities
+      apt:
+        name:
+          - git
+          - curl
+          - wget
+          - vim
+          - htop
+          - net-tools
+        state: present
+
+    # 5. Display system information
+    - name: Display system information
+      command: lsb_release -a
+      register: system_info
+
+    - name: Show system information
+      debug:
+        var: system_info.stdout
