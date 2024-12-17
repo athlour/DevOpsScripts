@@ -164,16 +164,24 @@ if [ $? -ne 0 ]; then
 fi
 log_message "Flask port ($FLASK_PORT) enabled in UFW successfully."
 
-# Check if the Flask app is already running, if so, run it in the background
-if pgrep -f "flask" > /dev/null; then
+# Check if the Flask app is already running
+if pgrep -f "python3 main.py" > /dev/null; then
     log_message "Flask app is already running in the background."
 else
     log_message "Starting Flask app in the background."
-    nohup flask run --host=0.0.0.0 --port="$FLASK_PORT" & >> "$LOG_FILE" 2>&1
+
+    # Navigate to the target directory and activate the virtual environment
+    cd "$TARGET_DIR" || { log_message "Error: Could not change to directory $TARGET_DIR"; exit 1; }
+    source "$TARGET_DIR/venv/bin/activate"
+
+    # Run the Flask app with nohup and log the output
+    nohup python3 main.py >> "$LOG_FILE" 2>&1 &
     if [ $? -ne 0 ]; then
         log_message "Error: Failed to start the Flask app."
+        deactivate
         exit 1
     fi
+
     log_message "Flask app started successfully."
 fi
 
